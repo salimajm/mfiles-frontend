@@ -801,24 +801,29 @@ stopRecording() {
     const metadata = this.selectedDocument?.metadata || [];
     return this.showAllMetadata ? metadata : metadata.slice(0, 13);
   }
-  getFileIcon(fileName: string): string {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'doc':
-      case 'docx':
-        return 'fas fa-file-word text-blue';
-      case 'xls':
-      case 'xlsx':
-        return 'fas fa-file-excel text-green';
-      case 'pdf':
-        return 'fas fa-file-pdf text-red';
-      case 'ppt':
-      case 'pptx':
-        return 'fas fa-file-powerpoint ';
-      default:
-        return 'fas fa-file text-gray';
-    }
+ getFileIcon(fileName: string | undefined | null): string {
+  if (!fileName || typeof fileName !== 'string') {
+    return 'fas fa-file text-gray'; // icône générique
   }
+
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'doc':
+    case 'docx':
+      return 'fas fa-file-word text-blue';
+    case 'xls':
+    case 'xlsx':
+      return 'fas fa-file-excel text-green';
+    case 'pdf':
+      return 'fas fa-file-pdf text-red';
+    case 'ppt':
+    case 'pptx':
+      return 'fas fa-file-powerpoint';
+    default:
+      return 'fas fa-file text-gray';
+  }
+}
+
 
   showShareDialog = false;
   publicLink = '';

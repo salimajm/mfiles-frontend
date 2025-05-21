@@ -42,7 +42,7 @@
       <li
         *ngFor="let doc of (documents?.Items?.length ? documents.Items : (selectedDocument ? [selectedDocument] : [])); trackBy: trackByDocId"
         (click)="selectDocument(doc)" [class.selected]="selectedDocument?.ID === doc.ID">
-        <i [class]="getFileIcon(doc.Title)"></i>
+        <i [ngClass]="getFileIcon(doc?.Title || doc?.name || '')"></i>
         <span class="doc-title">{{ doc.Title }}</span>
       </li>
 
