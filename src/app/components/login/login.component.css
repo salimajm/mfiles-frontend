@@ -1,0 +1,41 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.card {
+  border-radius: 10px;
+}
+
+.input-group-text {
+  background-color: #e9ecef;
+  border-right: none;
+}
+
+.form-control {
+  border-left: none;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border-color: #023053;
+}
+
+/* Style for the login button */
+.btn-primary {
+  background-color: #023053 !important; /* Set the button background color to blue */
+  border-color: #023053; /* Set the border color to blue */
+}
+
+.btn-primary:hover {
+  background-color: #021f36 !important; /* Darken the blue on hover */
+  border-color: #021f36;
+}
+
+/* Style for the icon inside the button */
+.btn-primary i {
+  color: white; /* Set the icon color to white */
+}/* Style for the logo icon */
+.fas.fa-user-lock {
+  color: #023053; /* Set the icon color to blue */
+}
+

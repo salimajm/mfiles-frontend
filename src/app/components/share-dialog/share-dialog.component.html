@@ -1,0 +1,17 @@
+<div class="share-modal card shadow" *ngIf="visible" style="min-width: 420px;">
+  <div class="card-body">
+    <h6 class="fw-semibold">🔗 Share</h6>
+
+    <div class="form-check form-switch mb-2">
+     
+      <div class="text-muted small ms-4">Anyone with the link can view the document and chat history.</div>
+    </div>
+
+    <div class="input-group mb-2">
+      <input type="text" class="form-control" [value]="fullExportLink" readonly>
+      <button class="btn btn-primary" (click)="copyLink()">Copy link</button>
+    </div>
+
+    
+  </div>
+</div>

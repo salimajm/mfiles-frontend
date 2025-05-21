@@ -1,0 +1,111 @@
+<div class="container mt-4">
+  <!-- 🗂️ Titre -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1747406789/zhzsukpjdvvdm9llbswq.png"
+         alt="Vault icon" class="me-2" style="height: 36px;">
+    <h3 class="mb-0">Documents Vault</h3>
+  </div>
+
+  <!-- 📥 Liste des documents -->
+  <div class="table-responsive" *ngIf="documents.length > 0">
+    <table class="table table-striped align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th scope="col">Nom</th>
+          <th scope="col">Créé</th>
+          <th scope="col">Modifié</th>
+          <th scope="col" class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of documents">
+          <td>
+            <i [class]="getFileIcon(doc.Files?.[0]?.Name || doc.EscapedTitleWithID) + ' me-2'"></i>
+            {{ doc.Files?.[0]?.Name || doc.EscapedTitleWithID }}
+          </td>
+          <td>{{ doc?.Created | date: 'dd/MM/yyyy - HH:mm' }}</td>
+          <td>{{ doc?.LastModified | date: 'dd/MM/yyyy - HH:mm' }}</td>
+          <td class="text-center">
+            <div class="dropdown">
+              <button class="btn btn-light border-0" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-three-dots fs-5 text-secondary"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                  <a class="dropdown-item d-flex align-items-center"
+                     (click)="openDocumentForPreview(doc.ObjVer.ID, doc.ObjVer.Version)">
+                    <i class="bi bi-eye me-2 text-primary"></i> Prévisualiser
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-center" (click)="downloadDocument(doc)">
+                    <i class="bi bi-download me-2 text-success"></i> Télécharger
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item d-flex align-items-center" (click)="showMetadata(doc)">
+                    <i class="bi bi-info-circle me-2 text-info"></i> Métadonnées
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ⚠️ Aucun document -->
+  <div *ngIf="documents.length === 0" class="alert alert-warning mt-4">
+    Aucun document trouvé.
+  </div>
+
+  <!-- 📄 Modal Métadonnées -->
+  <div class="modal-backdrop fade show custom-backdrop" *ngIf="showMetadataPopup"></div>
+
+  <div class="modal fade metadata-modal show d-block" tabindex="-1" *ngIf="showMetadataPopup">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light border-0">
+          <h5 class="modal-title fw-semibold text-dark">
+            📄 Métadonnées : {{ selectedDocument?.Title }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeMetadata()"></button>
+        </div>
+
+        <div class="modal-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center"
+                *ngFor="let entry of metadataEntries">
+              <strong class="text-secondary">{{ entry[0] }}</strong>
+              <span class="text-dark">{{ entry[1] }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="modal-footer border-0">
+          <button class="btn btn-outline-secondary" (click)="closeMetadata()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔢 Pagination -->
+  <nav *ngIf="totalPages() > 1" class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+      <li class="page-item" [class.disabled]="currentPage === 1">
+        <button class="page-link" (click)="changePage(currentPage - 1)">Préc.</button>
+      </li>
+
+      <li class="page-item" *ngFor="let page of totalPagesArray()" [class.active]="page === currentPage">
+        <button class="page-link" (click)="changePage(page)">
+          {{ page }}
+        </button>
+      </li>
+
+      <li class="page-item" [class.disabled]="currentPage === totalPages()">
+        <button class="page-link" (click)="changePage(currentPage + 1)">Suiv.</button>
+      </li>
+    </ul>
+  </nav>
+</div>

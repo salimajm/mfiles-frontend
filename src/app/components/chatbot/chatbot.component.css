@@ -1,0 +1,197 @@
+/* Chatbot Styling */
+.chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 420px;
+    height: 600px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 20px #023053;
+    background-color: #ffffff;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease-in-out;
+    border: 2px solid #023053;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .chat-header {
+    background-color: #023053;
+    color: white;
+    padding: 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .chat-header i {
+    margin-right: 8px;
+  }
+  
+  .chat-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  
+  .chat-body {
+    flex: 1;
+    background-color: #f9f9f9;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  
+  .msg-box {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+  
+  .user-msg {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .user-msg .msg-box {
+    background-color: #023053;
+    color: white;
+    border-bottom-right-radius: 0;
+  }
+  
+  .bot-msg {
+    display: flex;
+    justify-content: flex-start;
+  }
+  
+  .bot-msg .msg-box {
+    background-color: #e4e9f0;
+    color: #023053;
+    border-bottom-left-radius: 0;
+  }
+  
+  .chat-input {
+    padding: 12px 16px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    background-color: white;
+  }
+  
+  .chat-input input {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+  }
+  
+  .chat-input button {
+    margin-left: 10px;
+    background-color: #023053;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .chat-input button:hover {
+    background-color: #014b82;
+  }
+  .chat-float-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #023053;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    font-size: 22px;
+    z-index: 10000;
+    transition: background-color 0.3s ease;
+  }
+  
+  .chat-float-btn:hover {
+    background-color: #014b82;
+  }
+  .chat-body .welcome-msg {
+    background-color: #eef4ff;
+    border-left: 4px solid #0066cc;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .selected-doc {
+    font-size: 0.9rem;
+    border-left: 4px solid #007bff;
+    border-radius: 0 8px 8px 0;
+  }
+  .chat-widget, .metadata-card, .table {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn, .form-select, .form-control {
+    border-radius: 8px;
+}
+
+.table-striped tbody tr:hover {
+    background-color: #f2f2f2;
+    cursor: pointer;
+}
+
+.btn-icon, .btn-icons, .btn-iconss {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.btn-icon:hover, .btn-icons:hover, .btn-iconss:hover {
+    background-color: #e7f1ff;
+    transform: scale(1.1);
+}
+.chat-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  max-height: 600px;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.chat-input input {
+  border: none;
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  width: 85%;
+  outline: none;
+}

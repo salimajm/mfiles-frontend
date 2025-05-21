@@ -1,0 +1,40 @@
+<div class="export-widget">
+  <button class="btn btn-sm btn-primary" (click)="toggleDropdown()">
+    <i class="fas fa-download"></i>
+  </button>
+
+  <div class="dropdown-menu show" *ngIf="isOpen">
+    <label class="dropdown-header">Exporter avec :</label>
+
+
+    <button class="dropdown-item d-flex align-items-center gap-2" (click)="export('markdown')">
+      <i class="fas fa-file-alt text-primary"></i> Markdown
+    </button>
+    <button class="dropdown-item d-flex align-items-center gap-2" (click)="export('html')">
+      <i class="fab fa-html5 text-danger"></i> HTML
+    </button>
+    <button class="dropdown-item d-flex align-items-center gap-2" (click)="export('png')">
+      <i class="fas fa-image text-success"></i> PNG
+    </button>
+
+  </div>
+
+  <div *ngIf="isExporting" class="export-progress-modal">
+    <div class="modal-content shadow rounded" style="padding: 20px; width: 400px; background-color: white;">
+      <h5 class="mb-2" style="font-weight: 600;">Export as</h5>
+      <p class="mb-3 text-muted">{{ fileName }}</p>
+
+      <div class="progress mb-3" style="height: 8px;">
+        <div class="progress-bar bg-primary" role="progressbar" [style.width.%]="progress"></div>
+      </div>
+
+      <p class="text-muted mb-4">📤 Exportation en cours... Veuillez patienter quelques instants.</p>
+
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-outline-secondary btn-sm" (click)="cancelExport()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+</div>

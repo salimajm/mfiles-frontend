@@ -1,0 +1,239 @@
+.welcome-panel {
+  background: #f0f6ff;
+  border: 1px solid #d0e3fa;
+  border-left: 5px solid #0078d4;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.welcome-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.welcome-header i {
+  font-size: 24px;
+  color: #0078d4;
+  margin-top: 4px;
+}
+
+.welcome-header h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2b2b2b;
+}
+
+.highlight {
+  color: #0078d4;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.wrapper {
+  display: flex;
+  transition: all 0.3s ease;
+  font-family: "Segoe UI", sans-serif; /* Ajout de la police M-Files */
+}
+.sidebar-logo {
+  height: 200px;
+  width: auto;
+  display: block;
+}
+
+/* ✅ Sidebar */
+#sidebar {
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #023053  !important; /* Bleu M-Files */
+  color: white;
+  height: 100%;
+  padding-top: 20px;
+  transition: all 0.3s ease;
+}
+
+#sidebar .sidebar-header {
+  padding: 15px;
+  background: #023053 ; /* Légèrement plus foncé pour l'effet M-Files */
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#sidebar ul.components {
+  padding: 15px 0;
+  list-style: none;
+  margin: 0;
+}
+
+#sidebar ul li {
+  padding: 10px 15px;
+  transition: background 0.3s ease;
+}
+
+#sidebar ul li a {
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+#sidebar ul li a i {
+  font-size: 18px;
+}
+
+#sidebar ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+#sidebar ul li.active > a {
+  background-color: #005A9E; /* Bleu plus foncé pour l'élément actif */
+  color: #fff;
+}
+
+#content {
+
+  margin-left: 250px;
+
+  padding: 90px 20px 20px 20px;
+
+  width: calc(100% - 250px);
+
+  height: calc(100vh - 90px); /* Hauteur moins le padding-top utilisé pour laisser passer la navbar */
+
+  overflow: visible;
+
+  transition: all 0.3s ease;
+
+}
+
+ 
+
+/* ✅ Navbar (fixe la couleur bleu) */
+.navbar {
+  position: fixed;
+  width: calc(100% - 250px);
+  margin-left: 250px;
+  padding: 15px 20px;
+  background-color: #022d4e !important;
+  color: white;
+  z-index: 1030;
+  transition: all 0.3s ease;
+}
+
+.navbar .btn-light {
+  background-color: #022d4e !important;
+  border: none;
+  color: white;
+}
+
+.navbar .btn-light:hover {
+  background-color: #022d4e;
+}
+
+.navbar .navbar-brand {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.navbar .form-control {
+  max-width: 300px;
+}
+
+.navbar-nav .nav-item .nav-link {
+  color: white;
+}
+
+.navbar-nav .nav-item .nav-link:hover {
+  color: #ddd;
+}
+
+/* ✅ Sidebar réduit */
+.wrapper.collapsed #sidebar {
+  width: 70px;
+}
+
+.wrapper.collapsed #sidebar .sidebar-header h3,
+.wrapper.collapsed #sidebar ul li a span {
+  display: none;
+}
+
+.wrapper.collapsed #sidebar ul li a {
+  justify-content: center;
+}
+
+.wrapper.collapsed #content {
+  margin-left: 70px;
+  width: calc(100% - 70px);
+}
+
+.wrapper.collapsed .navbar {
+  margin-left: 70px;
+  width: calc(100% - 70px);
+  background-color: #022d4e  !important;
+}
+:root {
+  --navbar-height: 70px; /* Définis ici la hauteur exacte de ta navbar */
+}
+
+
+/* ✅ Responsivité */
+@media (max-width: 768px) {
+  #sidebar {
+    width: 0;
+    left: -250px;
+  }
+  #content {
+    margin-left: 250px;
+    padding: calc(var(--navbar-height) + 20px) 20px 20px 20px; /* 20px d'espace supplémentaire */
+    width: calc(100% - 250px);
+    height: 100vh;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+  }
+  
+
+  .navbar {
+    margin-left: 0;
+    width: 100%;
+    background-color: #022d4e  !important;
+  }
+
+  .wrapper.collapsed #sidebar {
+    width: 70px;
+    left: 0;
+  }
+
+  .wrapper.collapsed #content {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+  }
+
+  .wrapper.collapsed .navbar {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+    background-color: #023053  !important;
+  }
+  
+}
+/* Ajoute un espace avant la première icône quand la sidebar est réduite */
+.wrapper.collapsed #sidebar .components {
+  margin-top: 8rem; /* Ajuste la valeur selon ton design */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

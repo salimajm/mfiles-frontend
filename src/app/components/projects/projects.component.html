@@ -1,0 +1,644 @@
+<button class="chatbot-float-btn" (click)="openChatbotFromButton()">
+  <i class="fas fa-comments"></i>
+</button>
+
+<div class="container">
+  <div class="sidebar">
+    <div class="welcome-panel">
+      <div class="welcome-header">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <h3>Bienvenue sur <span class="highlight">M‑Files BOT</span></h3>
+          <p class="subtitle">Explorez vos projets, accédez aux documents, métadonnées et outils intelligents.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔔 Info Panel -->
+    <div class="alert alert-info d-flex align-items-center mb-3" role="alert" *ngIf="!selectedObjectTypeId">
+      <i class="fas fa-info-circle me-2"></i>
+      <div>
+        Pour afficher les projets et accéder à leurs documents, commencez par sélectionner un <strong>type
+          d’objet</strong> tel que <strong>Projet</strong>.
+      </div>
+    </div>
+    <label class="sidebar-label"> Listes des types d'objets :</label>
+
+    <!-- 🔽 Sélecteur de type d'objet -->
+    <select class="form-select mb-3" [(ngModel)]="selectedObjectTypeId" (change)="onObjectTypeChange()">
+      <option [ngValue]="null" disabled selected>-- Sélectionner un type d'objet --</option>
+      <option *ngFor="let type of objectTypes" [ngValue]="type.ID">{{ type.Name }}</option>
+    </select>
+    <label class="sidebar-label"> Informations sur le type d'objet sélectionné :</label>
+
+    <!-- 🔽 Sélecteur de projet -->
+    <select class="form-select mb-3" [(ngModel)]="selectedProjectId" (change)="getDocumentsByProject()"
+      [disabled]="!projects?.length">
+
+      <option [ngValue]="undefined" disabled selected>-- Sélectionner un projet --</option>
+      <option *ngFor="let project of projects" [ngValue]="project.ObjVer.ID">{{ project.Title }}</option>
+    </select>
+    <ul class="document-list">
+      <li
+        *ngFor="let doc of (documents?.Items?.length ? documents.Items : (selectedDocument ? [selectedDocument] : [])); trackBy: trackByDocId"
+        (click)="selectDocument(doc)" [class.selected]="selectedDocument?.ID === doc.ID">
+        <i [class]="getFileIcon(doc.Title)"></i>
+        <span class="doc-title">{{ doc.Title }}</span>
+      </li>
+
+    </ul>
+
+
+
+    <div *ngIf="loading" class="loading">Chargement en cours...</div>
+  </div>
+
+  <div class="main-content">
+    <div class="tab-buttons">
+      <button *ngFor="let tab of tabs" (click)="changeTab(tab)" [class.active]="selectedTab.id === tab.id">
+        {{ tab.icon }} <span class="tab-label">{{ tab.label }}</span>
+      </button>
+
+    </div>
+
+    <div class="tab-content">
+      <ng-container *ngIf="selectedTab.id === 'aiinfo' || selectedDocument; else noDocument">
+        <ng-container [ngSwitch]="selectedTab.id">
+
+          <div *ngSwitchCase="'metadata'" class="document-card">
+            <!-- En-tête -->
+            <div class="doc-header">
+              <div class="doc-left">
+                <div class="doc-icon">
+                  <i class="fas" [ngClass]="getFileIcon(selectedDocument.Title)"></i>
+                </div>
+                <div class="doc-info">
+                  <h2 class="doc-name">{{ selectedDocument.Title }}</h2>
+                  <div class="doc-meta">
+                    <span>Document</span> ·
+                    <span>ID {{ selectedDocument.DisplayID }} Version {{ selectedDocument.ObjVer?.Version }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="doc-right">
+                <div class="doc-dates">
+                  <div>Créé {{ getMetadataValue('Créé') }} {{ getMetadataValue('Créé par') }}</div>
+                  <div>Dernière modification {{ getMetadataValue('Dernière modification') }} {{
+                    getMetadataValue('Modifié par') }}</div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Métadonnées -->
+            <div class="metadata-section">
+              <table class="metadata-table">
+                <tr *ngFor="let entry of visibleMetadata(); let i = index">
+                  <td class="label">{{ entry[0] }}</td>
+                  <td class="value">
+                    <ng-container *ngIf="entry[0] === 'Projet'; else normalText">
+                      <a href="#" class="project-link">{{ entry[1] }}</a>
+                      <span class="link-icon">🔗</span>
+                    </ng-container>
+                    <ng-template #normalText>{{ entry[1] || '---' }}</ng-template>
+                  </td>
+                </tr>
+              </table>
+
+              <div *ngIf="selectedDocument.metadata?.length > 6" class="toggle-link">
+                <a href="#" (click)="toggleMetadata($event)">
+                  {{ showAllMetadata ? 'Afficher moins ▲' : 'Afficher plus ▼' }}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div *ngSwitchCase="'preview'">
+
+            <div *ngIf="loading" class="loading-preview">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+              <p>Chargement... {{ loadingProgress }}%</p>
+            </div>
+
+            <div *ngIf="rawBlobUrl && isOfficeType && !loading">
+
+
+              <div class="download-warning">
+                <i class="fas fa-info-circle text-warning me-2"></i>
+                Ce bouton télécharge le fichier dans son format d'origine (Word, Excel, PDF…).
+              </div>
+              <button
+                (click)="downloadDocument(selectedDocument.ObjVer.ID, selectedDocument.ObjVer.Version, selectedDocument.Title); $event.stopPropagation()"
+                class="btn btn-outline-secondary mt-2 ">
+                <i class="fas fa-download"></i> Télécharger
+              </button>
+            </div>
+
+
+            <div *ngIf="!loading && isDocumentOpen && previewUrl" class="preview-container">
+              <iframe [src]="previewUrl" width="100%" height="600px" style="border: none;"></iframe>
+            </div>
+
+            <div *ngIf="!loading && errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
+          </div>
+          <div *ngSwitchCase="'filters'">
+
+            <div class="advanced-filter p-4 border rounded shadow-sm bg-light">
+              <h4 class="mb-4 text-primary">🎯 Recherche personnalisée</h4>
+
+              <div class="row g-4">
+
+                <!-- Colonne gauche -->
+                <div class="col-md-6">
+                  <!-- Champ de nom de propriété -->
+                  <div class="mb-3">
+                    <label class="form-label">🔑 Propriété</label>
+                    <input type="text" [(ngModel)]="filterQuery" class="form-control"
+                      placeholder="Ex: Projet, Créé par, Statut..." />
+                  </div>
+
+                  <!-- Champ de valeur -->
+                  <div class="mb-3">
+                    <label class="form-label">🔍 Valeur</label>
+                    <input type="text" [(ngModel)]="valueFilterQuery" class="form-control"
+                      placeholder="Ex: Alpha, Jean Dupont..." />
+                  </div>
+
+                  <!-- Type de document -->
+                  <div class="mb-3">
+
+                    <!-- Dates dans les métadonnées -->
+                    <div class="alert alert-info" *ngIf="availableDates.length">
+                      <strong>📅 Dates disponibles :</strong>
+                      <ul class="mb-0">
+                        <li *ngFor="let date of availableDates">{{ date }}</li>
+                      </ul>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Colonne droite -->
+
+
+                <!-- Date de modification -->
+
+              </div>
+
+              <!-- Actions et Résumé -->
+              <div class="mt-4 d-flex justify-content-between align-items-center">
+                <button class="btn btn-outline-secondary" (click)="resetFilters()">Réinitialiser les filtres</button>
+                <span *ngIf="filteredMetadata.length > 0" class="text-success fw-bold">
+                  ✅ {{ filteredMetadata.length }} résultat(s) trouvé(s)
+                </span>
+                <span
+                  *ngIf="(filterQuery || valueFilterQuery || selectedUser || selectedDocType || selectedModificationRange !== 'any') && filteredMetadata.length === 0"
+                  class="text-danger">
+                  ❌ Aucun résultat
+                </span>
+              </div>
+
+              <!-- Résultats -->
+              <div class="mt-3">
+                <ul class="list-group">
+                  <li *ngFor="let entry of filteredMetadata" class="list-group-item">
+                    <strong>{{ entry[0] }}:</strong> {{ entry[1] || '---' }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+
+          </div>
+
+
+          <div *ngSwitchCase="'aiinfo'" [ngClass]="{ 'chatbot-container': true, 'chatbot-fullscreen': isFullScreen }">
+
+            <div *ngIf="isChatClosed"
+              style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center;">
+              <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1746178561/o4hvqztjcsiyxk7k9vk4.jpg"
+                alt="Explore" style="max-width: 250px; width: 100%; height: auto; margin-bottom: 20px;" />
+              <h2 style="font-size: 20px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">Help M-Files BOT to
+                help you !</h2>
+              <p style="font-size: 14px; color: #666;">Please select a document for M-Files BOT to analyze.</p>
+            </div>
+            <div *ngIf="!(isChatClosed)">
+
+              <div class="chatbot-header d-flex justify-content-between align-items-center p-2 shadow-sm">
+                <!-- Logo + Titre -->
+                <div class="d-flex align-items-center gap-2">
+                  <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1747227016/nrntijvgz1mhmoow5shv.png"
+                    alt="M-Files BOT Logo" width="28" height="28" style="border-radius: 8px;" />
+                  <span class="fw-semibold fs-8">M‑Files BOT</span>
+                </div>
+
+                <!-- Actions : export + boutons -->
+                <div class="d-flex align-items-center gap-2">
+                  <!-- Bouton plein écran -->
+                  <button (click)="toggleFullScreenChatbot()" class="btn btn-sm btn-light" title="Agrandir">
+                    <i class="fas" [ngClass]="{ 'fa-expand': !isFullScreen, 'fa-compress': isFullScreen }"></i>
+                  </button>
+
+                  <!-- Export widget à gauche -->
+                  <app-export-widget [targetSelector]="'.messages-container'"></app-export-widget>
+                  <div class="position-relative">
+                    <button (click)="showShareDialog = !showShareDialog" class="btn btn-sm btn-secondary"
+                      title="Partager">
+                      <i class="fas fa-share-alt"></i>
+                    </button>
+
+                    <app-share-dialog *ngIf="showShareDialog" [visible]="showShareDialog" [shareLink]="publicLink"
+                      [chatHistory]="messages" class="position-absolute top-100 end-0 mt-2 z-3">
+                    </app-share-dialog>
+                  </div>
+
+                  <button *ngIf="isMinimized" (click)="resetChatbot()" class="btn btn-sm btn-secondary"
+                    title="Restaurer">
+                    <i class="fas fa-window-restore"></i>
+                  </button>
+                  <button (click)="closeChat()" class="btn btn-sm btn-danger" title="Fermer">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="chatbot-body" *ngIf="!isMinimized">
+              <div class="messages-container">
+
+                <div *ngIf="showWelcomeMessage" class="welcome-message" (click)="hideWelcomeMessage()">
+                  <p>👋 How can M‑Files BOT help you today?</p>
+                </div>
+                <div class="chat-info mb-3" *ngIf="question || selectedDocument?.name">
+                  <p *ngIf="selectedDocument?.name" class="mb-2">
+                    📄 <strong>Fichier sélectionné :</strong> {{ selectedDocument.name }}
+                  </p>
+                  <p *ngIf="question" class="mb-0">
+                    ❓ <strong>Dernière question :</strong> {{ question }}
+                  </p>
+                </div>
+
+                <div *ngFor="let message of messages" class="chat-bubble" [ngClass]="message.sender">
+                  <div class="bubble-header d-flex align-items-center justify-content-between">
+                    <div>
+                      <i class="fas"
+                        [ngClass]="message.sender === 'user' ? 'fa-user text-primary' : 'fa-robot text-success'"></i>
+                      <span>{{ message.sender === 'user' ? 'Vous' : 'M‑Files BOT' }}</span>
+                    </div>
+                    <ng-container *ngIf="message.sender === 'user'">
+                      <button (click)="editMessage(message)" class="btn btn-sm btn-link text-info p-0" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                    </ng-container>
+                  </div>
+
+                  <div class="bubble-text" [innerHTML]="sanitize(message.text)"></div>
+
+                  <!-- Feedback pour le bot -->
+                  <ng-container *ngIf="message.sender === 'bot'">
+                    <div class="feedback-buttons mt-2">
+                      <button (click)="rateResponse(message, true)" class="btn btn-sm btn-outline-success me-2"
+                        title="J'aime">
+                        <i class="fas fa-thumbs-up"></i>
+                      </button>
+                      <button (click)="rateResponse(message, false)" class="btn btn-sm btn-outline-danger"
+                        title="Je n'aime pas">
+                        <i class="fas fa-thumbs-down"></i>
+                      </button>
+                      <span *ngIf="message.feedback === 'like'" class="text-success ms-2">👍 Merci pour votre retour
+                        !</span>
+                      <span *ngIf="message.feedback === 'dislike'" class="text-danger ms-2">👎 Merci pour votre retour
+                        !</span>
+                    </div>
+                  </ng-container>
+                </div>
+
+                <div *ngIf="isLoading" class="loading-message text-center my-4">
+                  <div class="mb-2">
+                    <i class="fas fa-brain fa-spin fa-2x text-primary"></i>
+                  </div>
+                  <p class="text-muted fst-italic fade-in">
+                    {{ currentLoadingMessage }}<span class="dots"></span>
+                  </p>
+                </div>
+
+
+                <div *ngIf="loadingTimeout" class="timeout-message">
+                  ⏳ Le serveur prend plus de temps que prévu...
+                </div>
+
+                <div *ngIf="chatHistoryVisible && chatHistory.length > 0"
+                  class="chat-history p-3 mt-3 shadow-sm rounded bg-white border">
+                  <h5 class="text-primary mb-3 d-flex align-items-center">
+                    <i class="fas fa-history me-2"></i> Historique de discussion
+                  </h5>
+
+                  <div class="list-group">
+                    <div *ngFor="let h of chatHistory"
+                      class="list-group-item list-group-item-action flex-column align-items-start mb-2">
+                      <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 text-dark"><i class="fas fa-question-circle text-info me-2"></i> Question</h6>
+                      </div>
+                      <p class="mb-2 text-muted">{{ h.question }}</p>
+
+                      <h6 class="mb-1 text-dark"><i class="fas fa-robot text-success me-2"></i> Réponse</h6>
+                      <p class="mb-0">{{ h.answer }}</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              <div *ngIf="analysisResult" class="analysis-summary mt-4 p-3 rounded shadow-sm"
+                style="background-color: #fffffff4; border: 1px solid #ddd;">
+                <h6 class="mb-3"></h6>
+
+
+
+                <div class="detected-links mt-3" *ngIf="analysisResult.links.length">
+                  <div class="d-flex align-items-center mb-1"
+                    style="font-size: 12px; font-weight: 400; color: #2c3e50;">
+                    <i class="fas fa-link text-info"></i>
+                    <span>Liens détectés : </span>
+                  </div>
+                  <ul class="list-unstyled ps-3" style="font-size: 13px; color: #555;">
+                    <li *ngFor="let link of analysisResult.links; let i = index" class="mb-1">
+                      <span style="font-weight: 500; color: #333;">[{{ i + 1 }}]</span>
+                      <a [href]="link" target="_blank"
+                        style="text-decoration: none; color: #007bff; word-break: break-word;">
+                        {{ link }}
+                      </a>
+                    </li>
+
+                  </ul>
+                </div>
+
+                <div *ngIf="analysisResult.similarDocs.length">
+                  <i class="fas fa-brain text-warning me-2"></i>
+                  <strong>Documents similaires :</strong>
+                  <ul class="list-unstyled mt-1">
+                    <li *ngFor="let doc of analysisResult.similarDocs">
+                      📄 {{ doc.filename }} <small class="text-muted">(score : {{ doc.similarity_score * 100 |
+                        number:'1.0-1' }}%)</small>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="chatbot-input mt-3 d-flex align-items-center gap-2">
+                <input [(ngModel)]="question" [disabled]="isLoading" (keyup.enter)="sendQuestion()" type="text"
+                  placeholder="Posez votre question..." class="form-control" />
+
+                <button (click)="sendQuestion()" class="btn btn-primary" [disabled]="isLoading">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+
+                <button (click)="toggleRecording()" class="btn btn-secondary" title="Voix">
+                  <i class="fas" [ngClass]="{ 'fa-microphone': !isRecording, 'fa-stop': isRecording }"></i>
+                </button>
+
+                <label for="file-upload" class="btn btn-warning mb-0" title="Envoyer un fichier">
+                  <i class="fas fa-upload"></i>
+                </label>
+                <input id="file-upload" type="file" (change)="handleFileUpload($event)" hidden />
+                <div class="dropdown dropdown-up" [ngClass]="{ 'show': modelDropdownOpen }">
+                  <button class="btn btn-outline-primary d-flex align-items-center gap-2"
+                    (click)="modelDropdownOpen = !modelDropdownOpen">
+                    <img *ngIf="selectedModel" [src]="getModelIcon(selectedModel)" alt="Icon" width="24" height="24" />
+                    {{ selectedModel || '🧠Choisir un modèle' }}
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+
+                  <ul class="dropdown-menu show w-100 mt-1" *ngIf="modelDropdownOpen">
+                    <li class="dropdown-item d-flex align-items-center gap-2" *ngFor="let model of models"
+                      (click)="selectModel(model)">
+                      <img [src]="getModelIcon(model)" alt="Icon" width="24" height="24" />
+                      {{ model }}
+                    </li>
+                  </ul>
+                </div>
+
+
+
+                <!-- Bouton Historique -->
+                <button (click)="openHistory()" class="btn btn-dark" title="Afficher l'historique">
+                  <i class="fas fa-history"></i>
+                </button>
+
+
+              </div>
+            </div>
+          </div>
+
+
+
+        </ng-container>
+      </ng-container>
+      <ng-template #noDocument>
+        <div
+          style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center;">
+          <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1746011488/jrukqxt0yhww4wvghljf.png"
+            alt="Explore" style="max-width: 250px; width: 100%; height: auto; margin-bottom: 20px;" />
+          <h2 style="font-size: 20px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">Time to explore</h2>
+          <p style="font-size: 14px; color: #666;">Select a project to view its details.</p>
+        </div>
+      </ng-template>
+
+
+
+    </div>
+  </div>
+</div>
+
+
+<style>
+  .download-warning {
+    font-size: 13px;
+    color: #856404;
+    margin-top: 8px;
+    background: #fff3cd;
+    padding: 8px 12px;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+  }
+
+  .chat-bubble {
+    max-width: 80%;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f1f1f1;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  .chat-bubble.user {
+    margin-left: auto;
+    background-color: #e8f0fe;
+    border-left: 4px solid #007bff;
+  }
+
+  .chat-bubble.bot {
+    margin-right: auto;
+    background-color: #e9fce9;
+    border-left: 4px solid #28a745;
+  }
+
+  .bubble-header {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .bubble-text {
+    padding-left: 2px;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .welcome-panel {
+    background: #f0f6ff;
+    border: 1px solid #d0e3fa;
+    border-left: 5px solid #0078d4;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .welcome-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .welcome-header i {
+    font-size: 24px;
+    color: #0078d4;
+    margin-top: 4px;
+  }
+
+  .welcome-header h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2b2b2b;
+  }
+
+  .highlight {
+    color: #0078d4;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+  }
+
+  .bubble-text table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .bubble-text table,
+  .bubble-text th,
+  .bubble-text td {
+    border: 1px solid #ccc;
+    padding: 6px;
+  }
+
+  .bubble-text th {
+    background-color: #f2f2f2;
+  }
+
+  .bubble-text ul {
+    padding-left: 20px;
+    margin-top: 6px;
+  }
+
+  .bubble-text a {
+    color: #007bff;
+    text-decoration: underline;
+  }
+
+  .chatbot-float-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+  }
+
+
+
+  .icon-btn {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 18px;
+    padding: 6px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .icon-btn:hover {
+    color: #007bff;
+  }
+
+  .share-modal {
+    width: 500px;
+    /* ⬅️ Augmente selon ton besoin (par ex : 320px, 360px...) */
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+  }
+
+  .chatbot-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 120vh;
+    z-index: 1050;
+    background: white;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
