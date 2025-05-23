@@ -1,0 +1,200 @@
+<!-- État fermé : illustration + message -->
+<div *ngIf="isChatClosed" class="chatbot-container"
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; text-align: center;">
+    <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1746178561/o4hvqztjcsiyxk7k9vk4.jpg" alt="Explore"
+        style="max-width: 250px; width: 100%; height: auto; margin-bottom: 20px;" />
+    <h2 style="font-size: 20px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;">
+        Help M-Files BOT to help you!
+    </h2>
+    <p style="font-size: 14px; color: #666;">Please select a document for M-Files BOT to analyze.</p>
+</div>
+
+<!-- État ouvert -->
+<div *ngIf="!isChatClosed">
+
+    <!-- Barre du haut -->
+    <div class="chatbot-header d-flex justify-content-between align-items-center p-2 shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+            <img src="https://res.cloudinary.com/ds6qxoyjg/image/upload/v1747227016/nrntijvgz1mhmoow5shv.png"
+                alt="M-Files BOT Logo" width="28" height="28" style="border-radius: 8px;" />
+            <span class="fw-semibold fs-8">M‑Files BOT</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button (click)="toggleFullScreenChatbot()" class="btn btn-sm btn-light" title="Agrandir">
+                <i class="fas" [ngClass]="{ 'fa-expand': !isFullScreen, 'fa-compress': isFullScreen }"></i>
+            </button>
+
+            <app-export-widget [targetSelector]="'.messages-container'"></app-export-widget>
+
+            <div class="position-relative">
+                <button (click)="showShareDialog = !showShareDialog" class="btn btn-sm btn-secondary" title="Partager">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+
+                <app-share-dialog *ngIf="showShareDialog" [visible]="showShareDialog" [shareLink]="publicLink"
+                    [chatHistory]="messages" class="position-absolute top-100 end-0 mt-2 z-3">
+                </app-share-dialog>
+            </div>
+
+            <button *ngIf="isMinimized" (click)="resetChatbot()" class="btn btn-sm btn-secondary" title="Restaurer">
+                <i class="fas fa-window-restore"></i>
+            </button>
+
+            <button (click)="closeChat()" class="btn btn-sm btn-danger" title="Fermer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Corps du chatbot -->
+    <div class="chatbot-body" *ngIf="!isMinimized">
+        <div class="messages-container">
+
+            <div *ngIf="showWelcomeMessage" class="welcome-message" (click)="hideWelcomeMessage()">
+                <p>👋 How can M‑Files BOT help you today?</p>
+            </div>
+
+            <div class="chat-info mb-3" *ngIf="question || selectedDocument?.name">
+                <p *ngIf="selectedDocument?.name || selectedDocument?.Title">
+                    📄 {{ selectedDocument.name || selectedDocument.Title }}
+                </p>
+
+                <p *ngIf="question" class="mb-0">
+                    ❓ <strong>Dernière question :</strong> {{ question }}
+                </p>
+            </div>
+
+            <div *ngFor="let message of messages" class="chat-bubble" [ngClass]="message.sender">
+                <div class="bubble-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas"
+                            [ngClass]="message.sender === 'user' ? 'fa-user text-primary' : 'fa-robot text-success'"></i>
+                        <span>{{ message.sender === 'user' ? 'Vous' : 'M‑Files BOT' }}</span>
+                    </div>
+                    <ng-container *ngIf="message.sender === 'user'">
+                        <button (click)="editMessage(message)" class="btn btn-sm btn-link text-info p-0"
+                            title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </ng-container>
+                </div>
+
+                <div class="bubble-text" [innerHTML]="sanitize(message.text)"></div>
+
+                <ng-container *ngIf="message.sender === 'bot'">
+                    <div class="feedback-buttons mt-2">
+                        <button (click)="rateResponse(message, true)" class="btn btn-sm btn-outline-success me-2"
+                            title="J'aime">
+                            <i class="fas fa-thumbs-up"></i>
+                        </button>
+                        <button (click)="rateResponse(message, false)" class="btn btn-sm btn-outline-danger"
+                            title="Je n'aime pas">
+                            <i class="fas fa-thumbs-down"></i>
+                        </button>
+                        <span *ngIf="message.feedback === 'like'" class="text-success ms-2">👍 Merci pour votre retour
+                            !</span>
+                        <span *ngIf="message.feedback === 'dislike'" class="text-danger ms-2">👎 Merci pour votre retour
+                            !</span>
+                    </div>
+                </ng-container>
+            </div>
+
+            <div *ngIf="isLoading" class="loading-message text-center my-4">
+                <div class="mb-2">
+                    <i class="fas fa-brain fa-spin fa-2x text-primary"></i>
+                </div>
+                <p class="text-muted fst-italic fade-in">
+                    {{ currentLoadingMessage }}<span class="dots"></span>
+                </p>
+            </div>
+
+            <div *ngIf="loadingTimeout" class="timeout-message">
+                ⏳ Le serveur prend plus de temps que prévu...
+            </div>
+
+            <div *ngIf="chatHistoryVisible && chatHistory.length > 0"
+                class="chat-history p-3 mt-3 shadow-sm rounded bg-white border">
+                <h5 class="text-primary mb-3 d-flex align-items-center">
+                    <i class="fas fa-history me-2"></i> Historique de discussion
+                </h5>
+                <div class="list-group">
+                    <div *ngFor="let h of chatHistory"
+                        class="list-group-item list-group-item-action flex-column align-items-start mb-2">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 text-dark"><i class="fas fa-question-circle text-info me-2"></i> Question
+                            </h6>
+                        </div>
+                        <p class="mb-2 text-muted">{{ h.question }}</p>
+                        <h6 class="mb-1 text-dark"><i class="fas fa-robot text-success me-2"></i> Réponse</h6>
+                        <p class="mb-0">{{ h.answer }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="analysisResult" class="analysis-summary mt-4 p-3 rounded shadow-sm"
+            style="background-color: #fffffff4; border: 1px solid #ddd;">
+            <div class="detected-links mt-3" *ngIf="analysisResult?.links?.length">
+                <div class="d-flex align-items-center mb-1" style="font-size: 12px; font-weight: 400; color: #2c3e50;">
+                    <i class="fas fa-link text-info"></i>
+                    <span>Liens détectés : </span>
+                </div>
+                <ul class="list-unstyled ps-3" style="font-size: 13px; color: #555;">
+                    <li *ngFor="let link of analysisResult.links; let i = index" class="mb-1">
+                        <span style="font-weight: 500; color: #333;">[{{ i + 1 }}]</span>
+                        <a [href]="link" target="_blank"
+                            style="text-decoration: none; color: #007bff; word-break: break-word;">
+                            {{ link }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div *ngIf="analysisResult?.similarDocs?.length">
+                <i class="fas fa-brain text-warning me-2"></i>
+                <strong>Documents similaires :</strong>
+                <ul class="list-unstyled mt-1">
+                    <li *ngFor="let doc of analysisResult.similarDocs">
+                        📄 {{ doc.filename }} <small class="text-muted">(score : {{ doc.similarity_score * 100 |
+                            number:'1.0-1' }}%)</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="chatbot-input mt-3 d-flex align-items-center gap-2">
+            <input [(ngModel)]="question" [disabled]="isLoading" (keyup.enter)="sendQuestion()" type="text"
+                placeholder="Posez votre question..." class="form-control" />
+            <button (click)="sendQuestion()" class="btn btn-primary" [disabled]="isLoading">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+            <button (click)="toggleRecording()" class="btn btn-secondary" title="Voix">
+                <i class="fas" [ngClass]="{ 'fa-microphone': !isRecording, 'fa-stop': isRecording }"></i>
+            </button>
+            <label for="file-upload" class="btn btn-warning mb-0" title="Envoyer un fichier">
+                <i class="fas fa-upload"></i>
+            </label>
+            <input id="file-upload" type="file" (change)="handleFileUpload($event)" hidden />
+            <div class="dropdown dropdown-up" [ngClass]="{ 'show': modelDropdownOpen }">
+                <button class="btn btn-outline-primary d-flex align-items-center gap-2"
+                    (click)="modelDropdownOpen = !modelDropdownOpen">
+                    <img *ngIf="selectedModel" [src]="getModelIcon(selectedModel)" alt="Icon" width="24" height="24" />
+                    {{ selectedModel || '🧠Choisir un modèle' }}
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <ul class="dropdown-menu show w-100 mt-1" *ngIf="modelDropdownOpen">
+                    <li class="dropdown-item d-flex align-items-center gap-2" *ngFor="let model of models"
+                        (click)="selectModel(model)">
+                        <img [src]="getModelIcon(model)" alt="Icon" width="24" height="24" />
+                        {{ model }}
+                    </li>
+                </ul>
+            </div>
+            <button (click)="openHistory()" class="btn btn-dark" title="Afficher l'historique">
+                <i class="fas fa-history"></i>
+            </button>
+        </div>
+    </div>
+</div>
+<app-toast #toast></app-toast>

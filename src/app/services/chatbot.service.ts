@@ -10,12 +10,18 @@ export class ChatbotService {
   private apiUrl = 'http://localhost:8001';  
 
   constructor(private http: HttpClient) {}
-  initFile(document: any): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', document.file);  // Assurez-vous d'envoyer le bon fichier
+initFileUpload(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return this.http.post(`${this.apiUrl}/init-files`, formData);
+}
 
-    return this.http.post(`${this.apiUrl}/init-files`, formData);
-  }
+
+initMFiles(document: any) {
+  const formData = new FormData();
+  formData.append('file', document.file); // ← important que la clé soit 'file'
+  return this.http.post(`${this.apiUrl}/init-files`, formData);
+}
 
 askQuestion(formData: FormData): Observable<any> {
   return this.http.post(`${this.apiUrl}/ask-file-ollama`, formData);

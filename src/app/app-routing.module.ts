@@ -8,6 +8,8 @@ import { ProfileComponent } from './components/profile/profile.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AuthguardService } from './services/authguard.service';
 import { DocumentsComponent } from './components/documents/documents.component';
+import { MetadataViewerComponent } from './components/metadata-viewer/metadata-viewer.component';
+import { DocumentPreviewComponent } from './components/document-preview/document-preview.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -18,6 +20,9 @@ const routes: Routes = [
     canActivate: [AuthguardService],
     children: [
       { path: 'projects', component: ProjectsComponent },
+      { path: 'metadata', component: MetadataViewerComponent },
+      { path: 'preview', component: DocumentPreviewComponent },
+
       { path: 'chatbot', component: ChatbotComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'dashboard', component: DashboardComponent },

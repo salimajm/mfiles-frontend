@@ -1,0 +1,20 @@
+<div *ngIf="loading" class="loading-preview">
+  <div class="spinner-border text-primary" role="status"></div>
+  <p>Chargement... {{ loadingProgress }}%</p>
+</div>
+
+<div *ngIf="rawBlobUrl && isOfficeType && !loading" class="download-warning">
+  <i class="fas fa-info-circle text-warning me-2"></i>
+  Ce bouton télécharge le fichier dans son format d'origine.
+  <button class="btn btn-outline-secondary mt-2" (click)="downloadDocument(selectedDocument.ObjVer.ID, selectedDocument.ObjVer.Version, selectedDocument.Title); $event.stopPropagation()">
+    <i class="fas fa-download"></i> Télécharger
+  </button>
+</div>
+
+<div *ngIf="!loading && isDocumentOpen && previewUrl" class="preview-container mt-3">
+  <iframe [src]="previewUrl" width="100%" height="600px" style="border: none;"></iframe>
+</div>
+
+<div *ngIf="!loading && errorMessage" class="error-message">
+  {{ errorMessage }}
+</div>

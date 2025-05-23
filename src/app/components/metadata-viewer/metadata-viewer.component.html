@@ -1,0 +1,46 @@
+<div class="document-card" *ngIf="document">
+  <div class="doc-header">
+    <div class="doc-left">
+      <div class="doc-icon">
+        <i class="fas" [ngClass]="document.Title ? 'fa-file' : 'fa-file-alt'"></i>
+      </div>
+      <div class="doc-info">
+        <h2 class="doc-name">{{ document.Title }}</h2>
+        <div class="doc-meta">
+          <span>Document</span> ·
+          <span>ID {{ document.DisplayID }} Version {{ document.ObjVer?.Version }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-right">
+      <div class="doc-dates">
+        <div>Créé {{ getMetadataValue('Créé') }} {{ getMetadataValue('Créé par') }}</div>
+        <div>Dernière modification {{ getMetadataValue('Dernière modification') }} {{ getMetadataValue('Modifié par') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="metadata-section">
+    <table class="metadata-table">
+      <tr *ngFor="let entry of visibleMetadata(); let i = index">
+        <td class="label">{{ entry[0] }}</td>
+        <td class="value">
+          <ng-container *ngIf="entry[0] === 'Projet'; else normalText">
+            <a href="#" class="project-link">{{ entry[1] }}</a>
+            <span class="link-icon">🔗</span>
+          </ng-container>
+          <ng-template #normalText>{{ entry[1] || '---' }}</ng-template>
+        </td>
+      </tr>
+    </table>
+
+    <div *ngIf="document?.metadata?.length > 6" class="toggle-link">
+      <a href="#" (click)="toggleMetadata()">
+        {{ showAllMetadata ? 'Afficher moins ▲' : 'Afficher plus ▼' }}
+      </a>
+    </div>
+  </div>
+</div>

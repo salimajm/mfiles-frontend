@@ -34,6 +34,9 @@ import {
 import { ExportWidgetComponent } from './components/export-widget/export-widget.component';
 import { ShareDialogComponent } from './components/share-dialog/share-dialog.component';
 import { DocumentsComponent } from './components/documents/documents.component';
+import { MetadataViewerComponent } from './components/metadata-viewer/metadata-viewer.component';
+import { DocumentPreviewComponent } from './components/document-preview/document-preview.component';
+import { ToastComponent } from './components/toast/toast.component';
 
 Chart.register(
   CategoryScale,
@@ -62,7 +65,10 @@ Chart.register(
     DashboardComponent,
     ExportWidgetComponent,
     ShareDialogComponent,
-    DocumentsComponent
+    DocumentsComponent,
+    MetadataViewerComponent,
+    DocumentPreviewComponent,
+    ToastComponent
   ],
   imports: [
     BaseChartDirective,
