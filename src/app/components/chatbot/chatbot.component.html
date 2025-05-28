@@ -11,6 +11,7 @@
 
 <!-- État ouvert -->
 <div *ngIf="!isChatClosed">
+  <div class="chatbot-wrapper" [ngClass]="{ 'fullscreen': isFullScreen }">
 
     <!-- Barre du haut -->
     <div class="chatbot-header d-flex justify-content-between align-items-center p-2 shadow-sm">
@@ -113,35 +114,40 @@
                 ⏳ Le serveur prend plus de temps que prévu...
             </div>
 
-            <div *ngIf="chatHistoryVisible && chatHistory.length > 0"
-                class="chat-history p-3 mt-3 shadow-sm rounded bg-white border">
-                <h5 class="text-primary mb-3 d-flex align-items-center">
-                    <i class="fas fa-history me-2"></i> Historique de discussion
-                </h5>
-                <div class="list-group">
-                    <div *ngFor="let h of chatHistory"
-                        class="list-group-item list-group-item-action flex-column align-items-start mb-2">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1 text-dark"><i class="fas fa-question-circle text-info me-2"></i> Question
-                            </h6>
-                        </div>
-                        <p class="mb-2 text-muted">{{ h.question }}</p>
-                        <h6 class="mb-1 text-dark"><i class="fas fa-robot text-success me-2"></i> Réponse</h6>
-                        <p class="mb-0">{{ h.answer }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div *ngIf="analysisResult" class="analysis-summary mt-4 p-3 rounded shadow-sm"
+        </div>
+        <div *ngIf="recordMetadata" class="record-metadata mt-3 p-3 border rounded bg-light">
+  <h6><i class="fas fa-archive text-secondary me-2"></i>Résumé Document</h6>
+  <ul class="list-unstyled ps-3">
+    <li><strong>📄 Nom :</strong> {{ recordMetadata.Nom_Document }}</li>
+    <li><strong>🗂️ Nature :</strong> {{ recordMetadata.Nature }}</li>
+    <li><strong>📅 Date :</strong> {{ recordMetadata.Date }}</li>
+    <li><strong>🗑️ Destruction :</strong> {{ recordMetadata.Destruction }}</li>
+   <li><strong>📌 Décision :</strong>
+  <span [ngClass]="{
+    'text-success': recordMetadata['Décision'].includes('CONSERVER'),
+    'text-danger': recordMetadata['Décision'].includes('DÉTRUIRE')
+  }">
+    {{ recordMetadata['Décision'] }}
+  </span>
+</li>
+
+
+  </ul>
+</div>
+
+        <div *ngIf="analysisResult?.links?.length || analysisResult?.similarDocs?.length"
+            class="analysis-summary mt-4 p-3 rounded shadow-sm"
             style="background-color: #fffffff4; border: 1px solid #ddd;">
+
+            <!-- Liens détectés -->
             <div class="detected-links mt-3" *ngIf="analysisResult?.links?.length">
                 <div class="d-flex align-items-center mb-1" style="font-size: 12px; font-weight: 400; color: #2c3e50;">
-                    <i class="fas fa-link text-info"></i>
-                    <span>Liens détectés : </span>
+                    <i class="fas fa-link text-info me-2"></i>
+                    <span>Liens détectés :</span>
                 </div>
                 <ul class="list-unstyled ps-3" style="font-size: 13px; color: #555;">
-                    <li *ngFor="let link of analysisResult.links; let i = index" class="mb-1">
+                    <li *ngFor="let link of analysisResult?.links; let i = index" class="mb-1">
                         <span style="font-weight: 500; color: #333;">[{{ i + 1 }}]</span>
                         <a [href]="link" target="_blank"
                             style="text-decoration: none; color: #007bff; word-break: break-word;">
@@ -151,16 +157,21 @@
                 </ul>
             </div>
 
+            <!-- Documents similaires -->
             <div *ngIf="analysisResult?.similarDocs?.length">
                 <i class="fas fa-brain text-warning me-2"></i>
                 <strong>Documents similaires :</strong>
                 <ul class="list-unstyled mt-1">
-                    <li *ngFor="let doc of analysisResult.similarDocs">
-                        📄 {{ doc.filename }} <small class="text-muted">(score : {{ doc.similarity_score * 100 |
-                            number:'1.0-1' }}%)</small>
+                    <li *ngFor="let doc of analysisResult?.similarDocs">
+                        📄 {{ doc?.filename }}
+                        <small class="text-muted">
+                            (score :
+                            {{ (doc?.similarity_score ?? 0) * 100 | number:'1.0-1' }}%)
+                        </small>
                     </li>
                 </ul>
             </div>
+
         </div>
 
         <div class="chatbot-input mt-3 d-flex align-items-center gap-2">
@@ -172,6 +183,7 @@
             <button (click)="toggleRecording()" class="btn btn-secondary" title="Voix">
                 <i class="fas" [ngClass]="{ 'fa-microphone': !isRecording, 'fa-stop': isRecording }"></i>
             </button>
+            
             <label for="file-upload" class="btn btn-warning mb-0" title="Envoyer un fichier">
                 <i class="fas fa-upload"></i>
             </label>
@@ -191,10 +203,64 @@
                     </li>
                 </ul>
             </div>
-            <button (click)="openHistory()" class="btn btn-dark" title="Afficher l'historique">
+            <button (click)="openHistory()" class="btn btn-dark history-toggle-btn" title="Afficher l'historique">
                 <i class="fas fa-history"></i>
             </button>
+
         </div>
     </div>
+    <!-- Overlay semi-transparent -->
+<div *ngIf="chatHistoryVisible"
+     class="chat-history-overlay"
+     (click)="chatHistoryVisible = false">
 </div>
+
+    <div class="chat-history-sidebar" *ngIf="chatHistoryVisible">
+        <div class="chat-history-header px-3 py-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">🕘 Historique des chats</h6>
+                <button class="btn-close" aria-label="Close" (click)="chatHistoryVisible = false"></button>
+            </div>
+
+            <input type="text" [(ngModel)]="searchQuery" placeholder="🔍 Rechercher..."
+                class="form-control form-control-sm mb-2">
+
+            <div class="btn-group w-100 mb-2">
+                <button class="btn btn-outline-primary btn-sm w-50" [class.active]="!showFavorites"
+                    (click)="showFavorites = false">Tout</button>
+
+                <button class="btn btn-outline-primary btn-sm w-50" [class.active]="showFavorites"
+                    (click)="showFavorites = true">Favoris</button>
+            </div>
+
+        </div>
+        <ul class="list-group list-group-flush">
+            <li *ngFor="let chat of getFilteredHistory()"
+                class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="me-auto">
+                    <div class="fw-bold text-truncate" style="max-width: 180px;">{{ chat.question }}</div>
+                    <small class="text-muted text-truncate d-block" style="max-width: 180px;">{{ chat.answer }}</small>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" (click)="loadChat(chat)" title="Afficher le chat">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" (click)="toggleFavorite(chat)"
+                        title="Marquer comme favori">
+                        <i class="fas" [ngClass]="chat.favorite ? 'fa-star' : 'fa-star-half-alt'"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" (click)="deleteChat(chat)" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </li>
+        </ul>
+
+        <div class="messages-container" #messagesContainer>
+
+    </div>
+
+</div>
+
+
 <app-toast #toast></app-toast>

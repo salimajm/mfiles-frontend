@@ -71,10 +71,17 @@ export class ToastComponent {
   @Input() type: 'success' | 'error' | 'info' | 'warning' = 'info';
   visible = false;
 
-  show(duration = 3000) {
-    this.visible = true;
-    setTimeout(() => (this.visible = false), duration);
-  }
+  show(title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') {
+  this.title = title;
+  this.message = message;
+  this.type = type;
+  this.visible = true;
+  setTimeout(() => {
+    this.visible = false;
+  }, 3000);
+}
+
+
   getIconClass(type: string): string {
     switch (type) {
       case 'success': return 'fas fa-check-circle';

@@ -35,7 +35,7 @@ export class DocumentsComponent {
   ) { }
 
   ngOnInit(): void {
-    this.authToken = JSON.parse(localStorage.getItem('authToken') || '""');
+this.authToken = localStorage.getItem('authToken') || '';
     this.baseUrl = localStorage.getItem('baseUrl') || '';
     if (this.authToken && this.baseUrl) {
       this.fetchAllDocuments(this.currentPage);

@@ -22,14 +22,12 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     // Load user data from localStorage
     this.userProfile.BaseUrl = localStorage.getItem('baseUrl') || '';
-    this.userProfile.AuthToken = JSON.parse(localStorage.getItem('authToken') || '""');
-    this.userProfile.Password = JSON.parse(localStorage.getItem('Password') || '""');
+    this.userProfile.AuthToken = localStorage.getItem('authToken') || '';
 
     // If you saved other user info like Username or VaultGuid, get them here
     const storedLogin = JSON.parse(localStorage.getItem('loginRequest') || '{}');
     this.userProfile.Username = storedLogin.Username || '';
     this.userProfile.VaultGuid = storedLogin.VaultGuid || '';
-    this.userProfile.Password = storedLogin.Password || '';
 
   }
 

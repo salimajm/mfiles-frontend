@@ -28,7 +28,8 @@ export class LayoutComponent implements OnInit {
 
   ngOnInit(): void {
     const storedUsername = localStorage.getItem('username');
-    this.authToken = JSON.parse(localStorage.getItem('authToken') || '""');
+    this.authToken = localStorage.getItem('authToken') || '';
+
     this.baseUrl = localStorage.getItem('baseUrl') || '';
     if (storedUsername) {
       this.username = storedUsername;

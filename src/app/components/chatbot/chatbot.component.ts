@@ -5,6 +5,7 @@ import { MfilesService } from '../../services/mfiles.service';
 import Swal from 'sweetalert2';
 import { ToastComponent } from '../toast/toast.component';
 import { ViewChild } from '@angular/core';
+import { HttpEventType } from '@angular/common/http';
 
 interface Tab {
   id: string;
@@ -26,11 +27,10 @@ interface ChatMessage {
 })
 export class ChatbotComponent implements OnChanges {
   @Input() document: any;
-@ViewChild('toast') toast!: ToastComponent;
-
+  @ViewChild('toast') toast!: ToastComponent;
+  @HostListener('document:click', ['$event'])
   selectedTab: Tab = { id: 'metadata', label: 'Metadata', icon: '🗂️' };
   tabs: Tab[] = [];
-
   messages: ChatMessage[] = [];
   isChatbotOpen = false;
   isMinimized = false;
@@ -39,30 +39,24 @@ export class ChatbotComponent implements OnChanges {
   chatHistoryVisible = false;
   chatHistory: any[] = [];
   isWidgetChatOpen = false;
-
   question = '';
   selectedDocument: any;
   isLoading = false;
   loadingTimeout = false;
   isDocumentSelected = false;
-
   selectedModel = 'deepseek-r1:1.5b';
   models: string[] = ['deepseek-r1:1.5b', 'mistral:instruct', 'gemma:2b'];
   modelDropdownOpen = false;
-
   analysisResult: {
     links: string[];
     similarDocs: { filename: string; similarity_score: number }[];
   } | null = null;
-
   isRecording = false;
   mediaRecorder!: MediaRecorder;
   audioChunks: Blob[] = [];
-
   showShareDialog = false;
   publicLink = '';
   isFullScreen = false;
-
   loadingMessages: string[] = [
     "🤖 M‑Files BOT réfléchit intensément pour vous fournir la meilleure réponse possible",
     "🧠 L'IA explore vos documents à la recherche d'indices pertinents",
@@ -70,13 +64,71 @@ export class ChatbotComponent implements OnChanges {
     "📚 Analyse des informations… Ça arrive très bientôt",
     "✨ Un moment magique est en préparation pour vous"
   ];
-
   currentLoadingMessage = '';
+  baseUrl!: string;
+  authToken!: string;
+  showFavorites: any;
+  private initSessionId: string = '';
+  searchQuery: string = '';
+  selectedHistoryTab: 'all' | 'favorites' = 'all';
+  recordMetadata: {
+    Nom_Document: string;
+    Nature: string;
+    Date: string;
+    Destruction: string;
+    Décision: string;
+  } | null = null;
 
   constructor(
     private sanitizer: DomSanitizer,
     private chatbotService: ChatbotService, private mfilesService: MfilesService
   ) { }
+
+  handleGlobalClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+
+    const clickedInsideSidebar = target.closest('.chat-history-sidebar');
+    const clickedToggleButton = target.closest('.history-toggle-btn');
+    const clickedToast = target.closest('app-toast');
+    const clickedExport = target.closest('app-export-widget');
+    const clickedShare = target.closest('app-share-dialog');
+
+    const clickedInsideAnyAllowed = clickedInsideSidebar || clickedToggleButton || clickedToast || clickedExport || clickedShare;
+
+    if (!clickedInsideAnyAllowed && this.chatHistoryVisible) {
+      this.chatHistoryVisible = false;
+      console.log('📂 Historique fermé automatiquement (clic en dehors)');
+    }
+
+    // Optionnel : fermer aussi le menu de modèle
+    if (!target.closest('.dropdown-menu') && !target.closest('.dropdown')) {
+      this.modelDropdownOpen = false;
+    }
+
+    // Fermer le menu de partage si ouvert
+    if (!clickedShare) {
+      this.showShareDialog = false;
+    }
+  }
+
+  loadChat(chat: any) {
+    this.resetChatbot();
+
+    this.messages.push({
+      sender: 'user',
+      text: chat.question,
+      feedback: null
+    });
+
+    this.messages.push({
+      sender: 'bot',
+      text: chat.answer,
+      feedback: null
+    });
+
+    this.chatHistoryVisible = false; // 🔒 Fermer la sidebar
+    this.showToast('Chat chargé', 'Le chat a été restauré depuis l’historique.', 'info');
+  }
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['document'] && changes['document'].currentValue) {
       this.selectedDocument = this.document;
@@ -87,39 +139,113 @@ export class ChatbotComponent implements OnChanges {
       this.initializeFile();     // ← Initialise le document dès qu’il est sélectionné
     }
   }
-  private initSessionId: string = '';
+  ngOnInit(): void {
+    this.authToken = localStorage.getItem('authToken') || '';
+    this.baseUrl = localStorage.getItem('baseUrl') || '';
 
-initializeFile() {
-  console.log("🟡 Tentative d'initialisation du fichier...");
-  console.log("selectedDocument ", this.selectedDocument);
-
-  const isLocalFile = this.selectedDocument?.file instanceof File;
-
-  if (!isLocalFile) {
-    console.warn('⚠️ Aucun fichier local à envoyer :', this.selectedDocument);
-    this.messages.push({
-      sender: 'bot',
-      text: "❗ Ce fichier provient d'un système distant (ex: M-Files) et ne peut pas être traité ici directement.",
-      feedback: null
-    });
-    this.isLoading = false;
-    return;
   }
 
-  this.isLoading = true;
-  this.chatbotService.initMFiles(this.selectedDocument).subscribe({
-    next: (res) => {
-      console.log('Fichier initialisé avec succès');
-      this.isLoading = false;
-      this.sendQuestion();
-    },
-    error: (err) => {
-      console.error('Erreur lors de l\'initialisation du fichier', err);
-      this.isLoading = false;
-    }
-  });
-}
+  getFilteredHistory() {
+    const query = this.searchQuery.toLowerCase();
+    const allChats = this.chatHistory || [];
 
+
+    const results = allChats.filter(chat => {
+      const matchesSearch =
+        chat.question.toLowerCase().includes(query) ||
+        chat.answer.toLowerCase().includes(query);
+
+      const matchesFavorite = !this.showFavorites || chat.favorite;
+
+      return matchesSearch && matchesFavorite;
+    });
+
+    return results;
+  }
+
+  toggleFavorite(chat: any) {
+    chat.favorite = !chat.favorite;
+
+    this.chatbotService.updateHistory(chat).subscribe({
+      next: () => console.log('✅ Favoris mis à jour côté backend'),
+      error: err => console.error('❌ Erreur mise à jour favoris', err)
+    });
+  }
+
+  deleteChat(chat: any) {
+
+    this.chatHistory = this.chatHistory.filter(h => h !== chat);
+
+    this.chatbotService.deleteHistory(chat).subscribe({
+      next: () => console.log('✅ Chat supprimé côté backend'),
+      error: err => console.error('❌ Erreur suppression chat', err)
+    });
+  }
+
+
+  initializeFile() {
+    console.log("🟡 Tentative d'initialisation du fichier...");
+    console.log("selectedDocument ", this.selectedDocument);
+
+    if (!this.selectedDocument) {
+      this.messages.push({
+        sender: 'bot',
+        text: "❗ Aucun document sélectionné.",
+        feedback: null
+      });
+      return;
+    }
+
+    const isLocalUpload = this.selectedDocument.file instanceof File;
+
+    if (isLocalUpload) {
+      this.uploadFileToBackend(this.selectedDocument.file);
+    } else if (this.selectedDocument.ObjVer) {
+      // Fichier distant depuis M-Files
+      this.isLoading = true;
+      this.mfilesService.downloadFromMFiles(this.selectedDocument.ObjVer.ID, this.selectedDocument.ObjVer.Version)
+        .subscribe({
+          next: (blob) => {
+            const file = new File([blob], this.selectedDocument.Title, { type: blob.type });
+            this.selectedDocument.file = file;
+            this.uploadFileToBackend(file);
+          },
+          error: (err) => {
+            console.error('❌ Erreur M-Files', err);
+            this.messages.push({
+              sender: 'bot',
+              text: "❌ Téléchargement échoué depuis M-Files.",
+              feedback: null
+            });
+            this.isLoading = false;
+          }
+        });
+
+    } else {
+      this.messages.push({
+        sender: 'bot',
+        text: "❗ Format de document non reconnu.",
+        feedback: null
+      });
+    }
+  }
+
+  uploadFileToBackend(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    this.selectedDocument.name = file.name;  // ← AJOUT ICI
+
+    this.chatbotService.initMFiles(formData).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.sendQuestion();
+      },
+      error: (err) => {
+        console.error('❌ Erreur backend init fichier', err);
+        this.isLoading = false;
+      }
+    });
+  }
 
   openChatbotFromButton(): void {
     this.selectedTab = this.tabs.find(tab => tab.id === 'aiinfo')!;
@@ -167,73 +293,113 @@ initializeFile() {
     this.isLoading = false;
     this.loadingTimeout = false;
     this.isChatClosed = false;
+    this.analysisResult = null;
+
+
   }
-showToast(title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') {
-  this.toast.title = title;
-  this.toast.message = message;
-  this.toast.type = type;
-  this.toast.show();
-}
-
-sendQuestion() {
-  if (this.isLoading) return;
-
-  if (!this.selectedDocument || (!this.selectedDocument.file && !this.selectedDocument.ObjVer)) {
-    this.showToast('Document manquant', 'Veuillez sélectionner ou uploader un document.', 'warning');
-    return;
+  showToast(title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') {
+    this.toast.title = title;
+    this.toast.message = message;
+    this.toast.type = type;
+    this.toast.show(title, message, type);
   }
 
-  if (!this.question || !this.question.trim()) {
-    this.showToast('Question vide', 'Veuillez poser une question.', 'info');
-    return;
-  }
+  sendQuestion() {
+    if (this.isLoading) return;
 
-  const currentSession = this.initSessionId;
-
-  // Ajoute la question dans la conversation avant d’envoyer
-  this.messages.push({ sender: 'user', text: this.question, feedback: null });
-
-  const formData = new FormData();
-  formData.append('question', this.question);
-  formData.append('model_choice', this.selectedModel);
-
-  console.log("📤 Envoi de la question :", this.question);
-  console.log("🧠 Modèle choisi :", this.selectedModel);
-
-  this.question = ''; // reset input
-  this.isLoading = true;
-  const index = Math.floor(Math.random() * this.loadingMessages.length);
-  this.currentLoadingMessage = this.loadingMessages[index];
-
-  this.chatbotService.askQuestion(formData).subscribe({
-    next: (res) => {
-      if (currentSession !== this.initSessionId) return;
-      console.log("✅ Réponse reçue :", res);
-
-      const parsed = this.parseAnswerWithThoughts(res.answer);
-      this.playThoughtsStepByStep(parsed.thoughtSteps, parsed.answer);
-
-      this.analysisResult = {
-        links: res.links_found || [],
-        similarDocs: res.similar_documents || []
-      };
-    },
-    error: (err) => {
-      if (currentSession !== this.initSessionId) return;
-      console.error('❌ Erreur backend :', err);
-
-      this.messages.push({
-        sender: 'bot',
-        text: '❌ Une erreur est survenue. Veuillez réessayer plus tard.',
-        feedback: null
-      });
-
-      this.isLoading = false;
-      this.showToast('Erreur serveur', 'Impossible de récupérer une réponse.', 'error');
+    if (!this.selectedDocument || (!this.selectedDocument.file && !this.selectedDocument.ObjVer)) {
+      this.showToast('Document manquant', 'Veuillez sélectionner ou uploader un document.', 'warning');
+      return;
     }
-  });
-}
 
+    if (!this.question || !this.question.trim()) {
+      this.showToast('Question vide', 'Veuillez poser une question.', 'info');
+      return;
+    }
+
+    const currentSession = this.initSessionId;
+    this.messages.push({ sender: 'user', text: this.question, feedback: null });
+
+    const formData = new FormData();
+    formData.append('question', this.question);
+    formData.append('model_choice', this.selectedModel);
+
+    this.question = '';
+    this.isLoading = true;
+    const index = Math.floor(Math.random() * this.loadingMessages.length);
+    this.currentLoadingMessage = this.loadingMessages[index];
+
+    this.chatbotService.askQuestion(formData).subscribe({
+      next: (res) => {
+        if (currentSession !== this.initSessionId) return;
+
+        const parsed = this.parseAnswerWithThoughts(res.answer);
+        this.playThoughtsStepByStep(parsed.thoughtSteps, parsed.answer);
+
+        this.analysisResult = {
+          links: res.links_found || [],
+          similarDocs: res.similar_documents || []
+        };
+        const docName = this.selectedDocument?.name;
+        if (!docName) {
+          console.warn("❌ Nom de document manquant → pas de récupération de métadonnées.");
+          return;
+        }
+
+        // ✅ ENCHAÎNER ici getDocumentMetadata uniquement APRÈS la réponse du chatbot
+        this.chatbotService.getDocumentMetadata(this.selectedDocument.name).subscribe({
+          next: (metaRes) => {
+            if (metaRes?.Nature && metaRes?.Date) {
+              this.recordMetadata = metaRes;
+              console.log("📄 Métadonnées chargées :", metaRes);
+
+              // 💥 TRUC : Exécuter dans `setTimeout` pour s'assurer que le DOM est prêt
+              setTimeout(() => this.showMetadataPopup(), 300);
+            }
+          },
+          error: (err) => {
+            console.warn("⚠️ Aucune métadonnée disponible ou erreur :", err);
+          }
+        });
+      },
+      error: (err) => {
+        if (currentSession !== this.initSessionId) return;
+        console.error('❌ Erreur backend :', err);
+
+        this.messages.push({
+          sender: 'bot',
+          text: '❌ Une erreur est survenue. Veuillez réessayer plus tard.',
+          feedback: null
+        });
+
+        this.isLoading = false;
+        this.showToast('Erreur serveur', 'Impossible de récupérer une réponse.', 'error');
+      }
+    });
+  }
+
+  showMetadataPopup() {
+    if (!this.recordMetadata) return;
+
+    const meta = this.recordMetadata;
+    const decisionColor = meta['Décision'].includes('CONSERVER') ? 'green' : 'red';
+
+    Swal.fire({
+      title: '📄 Métadonnées extraites',
+      html: `
+      <div style="text-align: left; font-size: 15px;">
+        <p><strong>📁 Nom :</strong> ${meta.Nom_Document}</p>
+        <p><strong>🗂️ Nature :</strong> ${meta.Nature}</p>
+        <p><strong>📅 Date :</strong> ${meta.Date}</p>
+        <p><strong>🗑️ Destruction :</strong> ${meta.Destruction}</p>
+        <p><strong>📌 Décision :</strong> <span style="color: ${decisionColor}; font-weight: bold;">${meta["Décision"]}</span></p>
+      </div>
+    `,
+      icon: 'info',
+      confirmButtonText: 'OK',
+      width: 500
+    });
+  }
 
   parseAnswerWithThoughts(raw: string): { thoughtSteps: string[]; answer: string } {
     if (!raw || typeof raw !== 'string') {
@@ -297,22 +463,22 @@ sendQuestion() {
     this.isRecording = false;
   }
 
-handleFileUpload(event: any) {
-  const file = event.target.files[0];
-  if (file) {
-    this.selectedDocument = { name: file.name, file };
-    this.isDocumentSelected = true;
-    this.messages.push({ sender: 'user', text: `📄 Fichier \"${file.name}\" envoyé.`, feedback: null });
-    this.resetChatbot();
+  handleFileUpload(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedDocument = { name: file.name, file };
+      this.isDocumentSelected = true;
+      this.messages.push({ sender: 'user', text: `📄 Fichier \"${file.name}\" envoyé.`, feedback: null });
+      this.resetChatbot();
 
-    // ✅ APPEL IMMÉDIAT
-    this.initializeFile();
+      // ✅ APPEL IMMÉDIAT
+      this.initializeFile();
 
-  } else {
-    this.selectedDocument = null;
-    this.messages.push({ sender: 'user', text: "❌ Aucun fichier valide sélectionné.", feedback: null });
+    } else {
+      this.selectedDocument = null;
+      this.messages.push({ sender: 'user', text: "❌ Aucun fichier valide sélectionné.", feedback: null });
+    }
   }
-}
 
   rateResponse(message: ChatMessage, liked: boolean) {
     message.feedback = liked ? 'like' : 'dislike';

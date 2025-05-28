@@ -43,7 +43,8 @@ selectedTab: Tab = { id: 'metadata', label: 'Metadata', icon: '🗂️' };
   constructor(private mfilesService: MfilesService) {}
 
   ngOnInit(): void {
-      this.authToken = JSON.parse(localStorage.getItem('authToken') || '""');
+      this.authToken = localStorage.getItem('authToken') || '';
+
     this.baseUrl = localStorage.getItem('baseUrl') || '';
     this.getObjectTypes();
   }

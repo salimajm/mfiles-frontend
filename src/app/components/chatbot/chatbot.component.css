@@ -344,3 +344,53 @@
   margin-top: 10px;
   box-shadow: 0 0 20px rgba(0,0,0,0.15);
 }
+.chat-history-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 450px;
+  height: 100vh;
+  background-color: #ffffff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1050;
+  overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+.chat-history-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.chat-history-sidebar .btn-close {
+  font-size: 0.9rem;
+}
+.chat-history-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(44, 62, 80, 0.5); /* couleur sombre semi-transparente */
+  z-index: 998;
+  cursor: pointer;
+}
+
+
+.chatbot-wrapper.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1050;
+  background: #ffffff;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* Pour éviter de perdre la scrollbar */
+.chatbot-wrapper.fullscreen .chatbot-body {
+  max-height: calc(100vh - 140px); /* ajustez selon la taille du header/input */
+  overflow-y: auto;
+}

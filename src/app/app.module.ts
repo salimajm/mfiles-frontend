@@ -4,7 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'; // For reactive forms
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { HttpClientModule } from '@angular/common/http';  // Import HttpClientModule here
+import { HTTP_INTERCEPTORS, HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';  // Import HttpClientModule here
 import { LoginComponent } from './components/login/login.component';
 import { ProjectsComponent } from './components/projects/projects.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -37,6 +37,8 @@ import { DocumentsComponent } from './components/documents/documents.component';
 import { MetadataViewerComponent } from './components/metadata-viewer/metadata-viewer.component';
 import { DocumentPreviewComponent } from './components/document-preview/document-preview.component';
 import { ToastComponent } from './components/toast/toast.component';
+import { authInterceptor } from './interceptors/auth.interceptor';
+// ✅ correspond exactement au nom exporté par la classe : `export class ErrorInterceptor`
 
 Chart.register(
   CategoryScale,
@@ -83,7 +85,10 @@ Chart.register(
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA], 
 
-  providers: [ 
+  providers: [
+       provideHttpClient(withInterceptors([authInterceptor]))
+
+
   ],
   bootstrap: [AppComponent]
 })

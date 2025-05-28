@@ -15,7 +15,12 @@ interface LoginRequest {
 export class MfilesService {
   searchFiles: any;
   private apiUrl = 'http://localhost:5113/api/mfiles';
-  constructor(private http: HttpClient, private router: Router) { }
+  authToken: any;
+  baseUrl: any;
+  constructor(private http: HttpClient, private router: Router) { 
+    this.authToken = localStorage.getItem('authToken') || '';
+
+    this.baseUrl = localStorage.getItem('baseUrl') || '';}
 getProjectsByObjectType(authToken: string, baseUrl: string, objectTypeId: number): Observable<any> {
   const headers = new HttpHeaders({
     'X-Authentication': authToken,
@@ -41,7 +46,9 @@ getProjectsByObjectType(authToken: string, baseUrl: string, objectTypeId: number
 
 
   login(request: LoginRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, request);
+return this.http.post(`${this.apiUrl}/login`, request, {
+  responseType: 'text'
+});
   }
 
   getDocuments(authToken: string, baseUrl: string): Observable<any> {
@@ -115,27 +122,35 @@ getDocumentsPaginated(authToken: string, baseUrl: string, page: number, pageSize
       }
     );
   }
+downloadFromMFiles(objectId: number, version: number): Observable<Blob> {
+  const headers = new HttpHeaders({
+    'X-Authentication': this.authToken,
+    'Base-Url': this.baseUrl
+  });
 
-  downloadDocument(authToken: string, baseUrl: string, objectId: number, version: number): Observable<HttpEvent<Blob>> {
-    const headers = new HttpHeaders()
-      .set('X-Authentication', authToken)
-      .set('Base-Url', baseUrl);
+  const url = `http://localhost:5113/api/mfiles/files/${objectId}/${version}/download`;
+  return this.http.get(url, {
+    headers,
+    responseType: 'blob'
+  });
+}
 
-    const url = `${this.apiUrl}/files/${objectId}/${version}/download`;
 
-    return this.http.get(url, {
-      headers,
-      responseType: 'blob',
-      observe: 'events',
-      reportProgress: true
-    }).pipe(
-      catchError(error => {
-        console.error('Error downloading document:', error);
-        return throwError(() => new Error('Error downloading document'));
-      })
-    );
-  }
 
+downloadDocument(token: string, baseUrl: string, id: number, version: number): Observable<HttpEvent<Blob>> {
+  const headers = new HttpHeaders({
+    'X-Authentication': token
+  });
+
+  const url = `/api/objects/0/${id}/${version}/files/0/content`;
+
+  return this.http.get(url, {
+    headers,
+    responseType: 'blob',
+    observe: 'events',
+    reportProgress: true
+  });
+}
 
   getDocumentMetadata(authToken: string, baseUrl: string, objectType: number, objectId: number): Observable<any> {
     const headers = new HttpHeaders({

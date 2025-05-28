@@ -16,11 +16,19 @@ initFileUpload(file: File) {
   return this.http.post(`${this.apiUrl}/init-files`, formData);
 }
 
+updateHistory(chat: any) {
+  return this.http.post(`${this.apiUrl}/history/update`, chat);
+}
+deleteHistory(chat: any) {
+  return this.http.post(`${this.apiUrl}/history/delete`, chat);
+}
 
-initMFiles(document: any) {
-  const formData = new FormData();
-  formData.append('file', document.file); // ← important que la clé soit 'file'
+initMFiles(formData: FormData) {
   return this.http.post(`${this.apiUrl}/init-files`, formData);
+}
+
+getDocumentMetadata(filename: string): Observable<any> {
+  return this.http.get(`${this.apiUrl}/records/${filename}`);
 }
 
 askQuestion(formData: FormData): Observable<any> {

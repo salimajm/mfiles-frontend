@@ -20,7 +20,7 @@ export class DashboardComponent implements OnInit  {
   constructor(private mfilesService: MfilesService) {}
 
   ngOnInit(): void {
-    this.authToken = JSON.parse(localStorage.getItem('authToken') || '""');
+this.authToken = localStorage.getItem('authToken') || '';
     this.baseUrl = localStorage.getItem('baseUrl') || '';
     this.loadPieChart();
     this.loadLineChart();
