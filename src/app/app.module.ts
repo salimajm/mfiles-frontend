@@ -70,7 +70,7 @@ Chart.register(
     DocumentsComponent,
     MetadataViewerComponent,
     DocumentPreviewComponent,
-    ToastComponent
+    ToastComponent,
   ],
   imports: [
     BaseChartDirective,

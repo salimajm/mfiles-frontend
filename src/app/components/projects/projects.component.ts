@@ -48,6 +48,18 @@ selectedTab: Tab = { id: 'metadata', label: 'Metadata', icon: '🗂️' };
     this.baseUrl = localStorage.getItem('baseUrl') || '';
     this.getObjectTypes();
   }
+openBotTab(): void {
+  this.selectedTab = { id: 'aiinfo', label: 'M‑Files BOT', icon: '🤖' };
+
+  if (!this.selectedDocument) {
+    this.selectedDocument = {
+      metadata: [],
+      isDummy: true
+    };
+  }
+}
+
+
  showCustomToast(title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') {
   this.toastComponent.title = title;
   this.toastComponent.message = message;

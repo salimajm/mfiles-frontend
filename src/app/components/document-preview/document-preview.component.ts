@@ -49,12 +49,11 @@ selectedDocument: any;
       'Base-Url': this.baseUrl
     });
 
-    // Simulation de progression douce
     const progressInterval = setInterval(() => {
       if (this.loadingProgress < 90) {
         this.loadingProgress += 5;
       }
-    }, 300); // Toutes les 300ms
+    }, 300); 
 
     this.http.get<{ pdfUrl: string, originalUrl: string }>(
       `http://localhost:5113/api/mfiles/convert/${objectId}/${version}`,

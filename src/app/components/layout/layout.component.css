@@ -107,7 +107,7 @@
 
 #content {
 
-  margin-left: 250px;
+  margin-left: 225px;
 
   padding: 90px 20px 20px 20px;
 
@@ -126,8 +126,8 @@
 /* ✅ Navbar (fixe la couleur bleu) */
 .navbar {
   position: fixed;
-  width: calc(100% - 250px);
-  margin-left: 250px;
+  width: calc(100% - 200px);
+  margin-left: 200px;
   padding: 15px 20px;
   background-color: #022d4e !important;
   color: white;

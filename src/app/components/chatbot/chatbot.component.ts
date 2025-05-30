@@ -77,6 +77,7 @@ export class ChatbotComponent implements OnChanges {
     Date: string;
     Destruction: string;
     Décision: string;
+    "Référence légale"?: string; // facultatif
   } | null = null;
 
   constructor(
@@ -140,10 +141,55 @@ export class ChatbotComponent implements OnChanges {
     }
   }
   ngOnInit(): void {
-    this.authToken = localStorage.getItem('authToken') || '';
-    this.baseUrl = localStorage.getItem('baseUrl') || '';
+  this.authToken = localStorage.getItem('authToken') || '';
+  this.baseUrl = localStorage.getItem('baseUrl') || '';
 
-  }
+if (this.document?.isDummy) {
+  this.messages = [
+    {
+      sender: 'bot',
+      text: `
+        <div style="
+          background-color: #f0f8ff;
+          border-radius: 12px;
+          padding: 16px 20px;
+          color: #1a1a1a;
+          font-size: 14px;
+          line-height: 1.6;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        ">
+          <div style="
+            flex-shrink: 0;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+          ">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <div>
+            <strong style="display: block; font-size: 15px; margin-bottom: 4px;">Bienvenue dans M‑Files BOT</strong>
+            Vous pouvez <strong>poser une question</strong> ou <strong>téléverser un document</strong> à analyser, même sans en avoir sélectionné un.
+          </div>
+        </div>
+      `,
+      feedback: null
+    }
+  ];
+}
+
+
+
+}
+
 
   getFilteredHistory() {
     const query = this.searchQuery.toLowerCase();
@@ -345,18 +391,20 @@ export class ChatbotComponent implements OnChanges {
           console.warn("❌ Nom de document manquant → pas de récupération de métadonnées.");
           return;
         }
+        console.log("📡 Appel getDocumentMetadata pour :", this.selectedDocument.name);
 
         // ✅ ENCHAÎNER ici getDocumentMetadata uniquement APRÈS la réponse du chatbot
         this.chatbotService.getDocumentMetadata(this.selectedDocument.name).subscribe({
           next: (metaRes) => {
+            console.log("📥 Métadonnées reçues du backend :", metaRes);
             if (metaRes?.Nature && metaRes?.Date) {
               this.recordMetadata = metaRes;
-              console.log("📄 Métadonnées chargées :", metaRes);
-
-              // 💥 TRUC : Exécuter dans `setTimeout` pour s'assurer que le DOM est prêt
               setTimeout(() => this.showMetadataPopup(), 300);
+            } else {
+              console.warn("⚠️ Métadonnées incomplètes :", metaRes);
             }
-          },
+          }
+          ,
           error: (err) => {
             console.warn("⚠️ Aucune métadonnée disponible ou erreur :", err);
           }
@@ -377,29 +425,16 @@ export class ChatbotComponent implements OnChanges {
       }
     });
   }
+showMetadataModal: boolean = false;
 
-  showMetadataPopup() {
-    if (!this.recordMetadata) return;
-
-    const meta = this.recordMetadata;
-    const decisionColor = meta['Décision'].includes('CONSERVER') ? 'green' : 'red';
-
-    Swal.fire({
-      title: '📄 Métadonnées extraites',
-      html: `
-      <div style="text-align: left; font-size: 15px;">
-        <p><strong>📁 Nom :</strong> ${meta.Nom_Document}</p>
-        <p><strong>🗂️ Nature :</strong> ${meta.Nature}</p>
-        <p><strong>📅 Date :</strong> ${meta.Date}</p>
-        <p><strong>🗑️ Destruction :</strong> ${meta.Destruction}</p>
-        <p><strong>📌 Décision :</strong> <span style="color: ${decisionColor}; font-weight: bold;">${meta["Décision"]}</span></p>
-      </div>
-    `,
-      icon: 'info',
-      confirmButtonText: 'OK',
-      width: 500
-    });
+showMetadataPopup() {
+  if (!this.recordMetadata) {
+    console.warn("❌ Pas de recordMetadata disponible !");
+    return;
   }
+
+  this.showMetadataModal = true;
+}
 
   parseAnswerWithThoughts(raw: string): { thoughtSteps: string[]; answer: string } {
     if (!raw || typeof raw !== 'string') {
